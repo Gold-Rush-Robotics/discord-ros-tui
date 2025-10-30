@@ -1,13 +1,19 @@
 import {Box, Text} from 'ink';
 import React from 'react';
 
-export function MessageInput({input}: {input: string}) {
+export function MessageInput({
+	input,
+	placeholder,
+}: {
+	input: string;
+	placeholder: string;
+}) {
 	return (
 		<Box height={3} borderStyle="single">
 			{!input ? (
 				<>
 					<Text color="white">{'> '}</Text>
-					<Text dimColor>Enter a command... (Ctrl+C to exit)</Text>
+					<Text dimColor>{placeholder}</Text>
 				</>
 			) : (
 				<Text>
