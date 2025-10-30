@@ -1,6 +1,6 @@
 import {Client, GatewayIntentBits} from 'discord.js';
 import {useApp} from 'ink';
-import React, {useEffect, useState} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 
 const DiscordClientContext = React.createContext<Client | null>(null);
 
@@ -36,6 +36,10 @@ function DiscordClientProvider({
 			{children}
 		</DiscordClientContext.Provider>
 	);
+}
+
+export function useDiscordClient() {
+	return useContext(DiscordClientContext);
 }
 
 export default DiscordClientProvider;
