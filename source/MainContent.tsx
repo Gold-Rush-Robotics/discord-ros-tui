@@ -8,7 +8,10 @@ export function MainContent({status}: {status: string}) {
 			<Box borderStyle="single" flexGrow={1}>
 				<Text>MAIN CONTENT</Text>
 			</Box>
-			<MessageInput input={status} />
+			<MessageInput
+				input={status}
+				placeholder="Enter a command... (Ctrl+C to exit)"
+			/>
 		</Box>
 	);
 }
