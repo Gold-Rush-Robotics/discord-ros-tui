@@ -1,18 +1,25 @@
-import {Box, useApp, useInput} from 'ink';
-import React, {useState} from 'react';
-import {MainContent} from './MainContent.js';
+import { Box, useApp, useInput } from "ink";
+import React, { useState } from "react";
+import DiscordClientProvider from "./DiscordClientProvider.js";
+import { MainContent } from "./MainContent.js";
 
-export default function App() {
-	const [input, setInput] = useState<string>('');
-	const {exit} = useApp();
+export default function App({
+	token,
+	guild,
+}: {
+	token: string;
+	guild: string;
+}) {
+	const [input, setInput] = useState<string>("");
+	const { exit } = useApp();
 
 	useInput((input, key) => {
-		if (key.ctrl && input === 'c') {
+		if (key.ctrl && input === "c") {
 			exit();
 			return;
 		}
 		if (key.return) {
-			setInput('');
+			setInput("");
 			return;
 		}
 		if (key.delete || key.backspace) {
@@ -25,7 +32,9 @@ export default function App() {
 	return (
 		// The top-level box stretches to fill 100% of the screen height and width
 		<Box width="100%" height="100%">
-			<MainContent status={input} />
+			<DiscordClientProvider token={token} guild={guild}>
+				<MainContent status={input} />
+			</DiscordClientProvider>
 		</Box>
 	);
 }
