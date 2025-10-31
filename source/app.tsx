@@ -3,9 +3,14 @@ import React, { useState } from "react";
 import DiscordClientProvider from "./DiscordClientProvider.js";
 import { MainContent } from "./MainContent.js";
 
-export default function App({ token: inputToken }: { token?: string }) {
+export default function App({
+	token,
+	guild,
+}: {
+	token: string;
+	guild: string;
+}) {
 	const [input, setInput] = useState<string>("");
-	const [token, setToken] = useState<string | undefined>(inputToken);
 	const { exit } = useApp();
 
 	useInput((input, key) => {
@@ -18,9 +23,6 @@ export default function App({ token: inputToken }: { token?: string }) {
 			return;
 		}
 		if (key.delete || key.backspace) {
-			if (!token) {
-				setToken((_prev: string | undefined) => input.trim());
-			}
 			setInput((prev: string) => prev.slice(0, -1));
 			return;
 		}
@@ -30,7 +32,7 @@ export default function App({ token: inputToken }: { token?: string }) {
 	return (
 		// The top-level box stretches to fill 100% of the screen height and width
 		<Box width="100%" height="100%">
-			<DiscordClientProvider token={token ?? ""}>
+			<DiscordClientProvider token={token} guild={guild}>
 				<MainContent status={input} />
 			</DiscordClientProvider>
 		</Box>

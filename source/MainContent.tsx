@@ -1,8 +1,12 @@
 import { Box, Text } from "ink";
 import React from "react";
+import { useDiscord } from "./DiscordClientProvider.js";
 import { MessageInput } from "./MessageInput.js";
 
 export function MainContent({ status }: { status: string }) {
+	const { client } = useDiscord();
+	const user = client.user;
+
 	return (
 		<>
 			<Box flexDirection="column" flexGrow={1}>
