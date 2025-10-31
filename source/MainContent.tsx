@@ -8,14 +8,46 @@ export function MainContent({ status }: { status: string }) {
 	const user = client.user;
 
 	return (
-		<Box flexDirection="column" flexGrow={1}>
-			<Box borderStyle="single" flexGrow={1}>
-				<Text>Logged in as {user?.username}</Text>
+		<>
+			<Box flexDirection="column" flexGrow={1}>
+				<Box flexDirection="row" flexGrow={1} gap={1}>
+					<Box flexDirection="column" width={25}>
+						<Box
+							borderStyle="single"
+							flexDirection="column"
+							flexGrow={1}
+							paddingX={1}
+						>
+							<Text bold>Nodes</Text>
+							<Text>Node1</Text>
+							<Text>Node2</Text>
+						</Box>
+
+						<Box
+							borderStyle="single"
+							flexDirection="column"
+							flexGrow={1}
+							paddingX={1}
+						>
+							<Text bold>Topics</Text>
+							<Text>Topic1</Text>
+							<Text>Topic2</Text>
+						</Box>
+					</Box>
+
+					<Box
+						borderStyle="single"
+						flexDirection="column"
+						flexGrow={1}
+						paddingX={1}
+					>
+						<Text bold>Main content</Text>
+						<Text>Show info here</Text>
+					</Box>
+				</Box>
+
+				<MessageInput input={status} />
 			</Box>
-			<MessageInput
-				input={status}
-				placeholder="Enter a command... (Ctrl+C to exit)"
-			/>
-		</Box>
+		</>
 	);
 }
