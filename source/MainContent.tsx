@@ -1,8 +1,8 @@
-import {Box, Text} from 'ink';
-import React from 'react';
-import {MessageInput} from './MessageInput.js';
+import { Box, Text } from "ink";
+import React from "react";
+import { MessageInput } from "./MessageInput.js";
 
-export function MainContent({status}: {status: string}) {
+export function MainContent({ status }: { status: string }) {
 	return (
 		<>
 			<Box flexDirection="column" flexGrow={1}>

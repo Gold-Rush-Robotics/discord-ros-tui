@@ -1,5 +1,5 @@
-import {Box, Text} from 'ink';
-import React from 'react';
+import { Box, Text } from "ink";
+import React from "react";
 
 export function MessageInput({
 	input,
@@ -12,12 +12,12 @@ export function MessageInput({
 		<Box height={3} borderStyle="single">
 			{!input ? (
 				<>
-					<Text color="white">{'> '}</Text>
+					<Text color="white">{"> "}</Text>
 					<Text dimColor>{placeholder}</Text>
 				</>
 			) : (
 				<Text>
-					<Text color="white">{'> '}</Text>
+					<Text color="white">{"> "}</Text>
 					{input}
 				</Text>
 			)}
