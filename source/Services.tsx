@@ -90,6 +90,7 @@ function Services({ interactable }: { interactable: boolean }) {
       hoverIndex={hoverIndex}
       loadingMessage="Loading services"
       formatItem={(service) => `/${service.displayName}`}
+      isCarousel={true}
     />
   );
 }

@@ -53,6 +53,7 @@ function Packages({ interactable }: { interactable: boolean }) {
       hoverIndex={hoverIndex}
       loadingMessage="Loading packages"
       formatItem={(pkg) => `/${pkg.name}`}
+      isCarousel={true}
     />
   );
 }

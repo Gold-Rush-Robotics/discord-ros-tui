@@ -53,6 +53,7 @@ function Nodes({ interactable }: { interactable: boolean }) {
       hoverIndex={hoverIndex}
       loadingMessage="Loading nodes"
       formatItem={(node) => `/${node.displayName}`}
+      isCarousel={true}
     />
   );
 }
