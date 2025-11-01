@@ -42,11 +42,15 @@ export function MainContent({ status }: { status: string }) {
 						paddingX={1}
 					>
 						<Text bold>Main content</Text>
+						<Text>Logged in as {user?.username}</Text>
 						<Text>Show info here</Text>
 					</Box>
 				</Box>
 
-				<MessageInput input={status} />
+				<MessageInput
+					input={status}
+					placeholder="Enter a command... (Ctrl+C to exit)"
+				/>
 			</Box>
 		</>
 	);
