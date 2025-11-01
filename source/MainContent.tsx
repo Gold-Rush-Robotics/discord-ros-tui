@@ -2,6 +2,8 @@ import { Box, Text } from "ink";
 import React from "react";
 import { useDiscord } from "./DiscordClientProvider.js";
 import { MessageInput } from "./MessageInput.js";
+import Nodes from "./Nodes.js";
+import Topics from "./Topics.js";
 
 export function MainContent({ status }: { status: string }) {
 	const { client } = useDiscord();
@@ -17,10 +19,9 @@ export function MainContent({ status }: { status: string }) {
 							flexDirection="column"
 							flexGrow={1}
 							paddingX={1}
+							overflow="hidden"
 						>
-							<Text bold>Nodes</Text>
-							<Text>Node1</Text>
-							<Text>Node2</Text>
+							<Nodes interactable={true} />
 						</Box>
 
 						<Box
@@ -28,10 +29,9 @@ export function MainContent({ status }: { status: string }) {
 							flexDirection="column"
 							flexGrow={1}
 							paddingX={1}
+							overflow="hidden"
 						>
-							<Text bold>Topics</Text>
-							<Text>Topic1</Text>
-							<Text>Topic2</Text>
+							<Topics interactable={true} />
 						</Box>
 					</Box>
 
