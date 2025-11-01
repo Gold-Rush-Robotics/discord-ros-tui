@@ -113,7 +113,7 @@ async function initializeDiscordClient(
   guild: string,
   exit: () => void,
   setClient: (client: Client) => void
-): Promise<void> {
+) {
   try {
     await client.login(token);
   } catch (err) {

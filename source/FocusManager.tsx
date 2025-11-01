@@ -19,7 +19,7 @@ const FocusManagerContext = createContext<FocusManagerContextValue | null>(
 // Carousel IDs - keep in sync with MainContent
 const CAROUSEL_IDS = ["node", "packages", "services"] as const;
 
-function getCarouselIndexFromId(id: string): number {
+function getCarouselIndexFromId(id: string) {
   return CAROUSEL_IDS.indexOf(id as (typeof CAROUSEL_IDS)[number]);
 }
 
@@ -28,18 +28,18 @@ export function FocusManagerProvider({ children }: { children: ReactNode }) {
   const [currentFocus, setCurrentFocus] =
     useState<FocusTarget>("command-input");
 
-  function isFocused(target: FocusTarget): boolean {
+  function isFocused(target: FocusTarget) {
     return currentFocus === target;
   }
 
-  function isCarouselItemActive(id: string): boolean {
+  function isCarouselItemActive(id: string) {
     return (
       currentFocus === "carousel" &&
       getCarouselIndexFromId(id) === carouselIndex
     );
   }
 
-  function focusCarouselItem(id: string): void {
+  function focusCarouselItem(id: string) {
     const index = getCarouselIndexFromId(id);
     if (index !== -1) {
       setCarouselIndex(index);
@@ -64,7 +64,7 @@ export function FocusManagerProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useFocusManager(): FocusManagerContextValue {
+export function useFocusManager() {
   const context = useContext(FocusManagerContext);
   if (!context) {
     throw new Error("useFocusManager must be used within FocusManagerProvider");

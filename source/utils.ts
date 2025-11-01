@@ -2,7 +2,7 @@ import { writeSync } from "fs";
 import { Key } from "ink";
 import { Dispatch, SetStateAction } from "react";
 
-export function exitError(exit: (error?: Error) => void, error: Error): void {
+export function exitError(exit: (error?: Error) => void, error: Error) {
   process.exitCode = 1;
   exit();
   setTimeout(() => {
