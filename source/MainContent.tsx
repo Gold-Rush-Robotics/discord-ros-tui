@@ -40,6 +40,7 @@ export function MainContent({ status }: { status: string }) {
             flexDirection="column"
             flexGrow={1}
             paddingX={1}
+            overflow="hidden"
           >
             <Text bold>Main content</Text>
             <Text>Logged in as {user?.username}</Text>

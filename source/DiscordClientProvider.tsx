@@ -24,7 +24,12 @@ function DiscordClientProvider({
       throw new Error("No token provided");
     }
     const newClient = new Client({
-      intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
+      intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+      ],
     });
     initializeDiscordClient(newClient, token, guild, exit, setClient);
 
