@@ -1,7 +1,8 @@
 import { ChannelType, GuildChannel } from "discord.js";
-import { useFocus, useInput } from "ink";
+import { useInput } from "ink";
 import React, { useEffect, useState } from "react";
 import { useDiscord, useSelection } from "./DiscordClientProvider.js";
+import { useFocusManager } from "./FocusManager.js";
 import SelectableList from "./SelectableList.js";
 import { sidebarItemInputHandler } from "./utils.js";
 
@@ -11,14 +12,14 @@ function Topics({ interactable }: { interactable: boolean }) {
   const { selection, setSelection } = useSelection();
   const { client, guild } = useDiscord();
 
-  const { isFocused } = useFocus({ id: "topics" });
+  const { isFocused } = useFocusManager();
 
   function handleReturn(selectedIndex: number) {
     setSelection({ id: topics?.[selectedIndex]?.id ?? "", type: "topic" });
   }
 
   useInput((_input, key) => {
-    if (!interactable || !isFocused || !topics) {
+    if (!interactable || !isFocused("topics") || !topics) {
       return;
     }
     sidebarItemInputHandler(
@@ -52,7 +53,7 @@ function Topics({ interactable }: { interactable: boolean }) {
       selection={selection}
       selectionType="topic"
       interactable={interactable}
-      isFocused={isFocused}
+      isFocused={isFocused("topics")}
       hoverIndex={hoverIndex}
       loadingMessage="Loading topics"
       formatItem={(topic) => `/${topic.name}`}

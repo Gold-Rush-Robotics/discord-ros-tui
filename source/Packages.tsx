@@ -1,7 +1,8 @@
 import { Role } from "discord.js";
-import { useFocus, useInput } from "ink";
+import { useInput } from "ink";
 import React, { useEffect, useState } from "react";
 import { useDiscord, useSelection } from "./DiscordClientProvider.js";
+import { useFocusManager } from "./FocusManager.js";
 import SelectableList from "./SelectableList.js";
 import { sidebarItemInputHandler } from "./utils.js";
 
@@ -11,7 +12,8 @@ function Packages({ interactable }: { interactable: boolean }) {
   const { selection, setSelection } = useSelection();
   const { client, guild } = useDiscord();
 
-  const { isFocused } = useFocus({ id: "packages" });
+  const { isCarouselItemActive } = useFocusManager();
+  const isFocused = isCarouselItemActive("packages");
 
   function handleReturn(selectedIndex: number) {
     setSelection({ id: packages?.[selectedIndex]?.id ?? "", type: "package" });

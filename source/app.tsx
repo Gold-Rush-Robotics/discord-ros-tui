@@ -1,6 +1,7 @@
-import { Box, Key, useApp, useFocus, useFocusManager, useInput } from "ink";
+import { Box, Key, useApp, useInput } from "ink";
 import React, { useState } from "react";
 import DiscordClientProvider from "./DiscordClientProvider.js";
+import { useFocusManager } from "./FocusManager.js";
 import { MainContent } from "./MainContent.js";
 
 export default function App({
@@ -12,20 +13,38 @@ export default function App({
 }) {
   const [input, setInput] = useState<string>("");
   const { exit } = useApp();
-  const { focus } = useFocusManager();
-  const { isFocused: isCommandFocused } = useFocus({ id: "command-input" });
+  const { currentFocus, setFocus, isFocused } = useFocusManager();
 
   useInput((input, key) => {
-    let shouldFocusAnyway = false; // since I don't think focus() will update the state immediately
-    if (shouldKeyFocusCommandInput(input, key)) {
-      shouldFocusAnyway = true;
-      focus("command-input");
-    }
+    // Ctrl+C always exits
     if (key.ctrl && input === "c") {
       exit();
       return;
     }
-    if (!isCommandFocused && !shouldFocusAnyway) {
+
+    // Tab toggles between topics and carousel
+    if (key.tab && !key.shift) {
+      if (currentFocus === "topics") {
+        setFocus("carousel");
+      } else if (currentFocus === "carousel") {
+        setFocus("topics");
+      } else {
+        // If in command input, go to topics first
+        setFocus("topics");
+      }
+      return;
+    }
+
+    // Typing normal characters focuses command input
+    if (shouldKeyFocusCommandInput(input, key)) {
+      setFocus("command-input");
+    }
+
+    // Only handle input if command input is focused
+    if (
+      !isFocused("command-input") &&
+      !shouldKeyFocusCommandInput(input, key)
+    ) {
       return;
     }
 
@@ -41,7 +60,6 @@ export default function App({
   });
 
   return (
-    // The top-level box stretches to fill 100% of the screen height and width
     <Box width="100%" height="100%">
       <DiscordClientProvider token={token} guild={guild}>
         <MainContent status={input} />

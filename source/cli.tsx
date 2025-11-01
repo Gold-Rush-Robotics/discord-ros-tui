@@ -4,6 +4,7 @@ import { withFullScreen } from "fullscreen-ink";
 import meow from "meow";
 import React from "react";
 import App from "./app.js";
+import { FocusManagerProvider } from "./FocusManager.js";
 
 const cli = meow(
   `
@@ -44,5 +45,9 @@ if (!token) {
   process.exitCode = 1;
 } else {
   const props: Record<string, string | undefined> = { token, guild };
-  withFullScreen(<App {...(props as any)} />).start();
+  withFullScreen(
+    <FocusManagerProvider>
+      <App {...(props as any)} />
+    </FocusManagerProvider>
+  ).start();
 }
