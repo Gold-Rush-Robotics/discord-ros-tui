@@ -4,37 +4,37 @@ import DiscordClientProvider from "./DiscordClientProvider.js";
 import { MainContent } from "./MainContent.js";
 
 export default function App({
-	token,
-	guild,
+  token,
+  guild,
 }: {
-	token: string;
-	guild: string;
+  token: string;
+  guild: string;
 }) {
-	const [input, setInput] = useState<string>("");
-	const { exit } = useApp();
+  const [input, setInput] = useState<string>("");
+  const { exit } = useApp();
 
-	useInput((input, key) => {
-		if (key.ctrl && input === "c") {
-			exit();
-			return;
-		}
-		if (key.return) {
-			setInput("");
-			return;
-		}
-		if (key.delete || key.backspace) {
-			setInput((prev: string) => prev.slice(0, -1));
-			return;
-		}
-		setInput((prev: string) => prev + input);
-	});
+  useInput((input, key) => {
+    if (key.ctrl && input === "c") {
+      exit();
+      return;
+    }
+    if (key.return) {
+      setInput("");
+      return;
+    }
+    if (key.delete || key.backspace) {
+      setInput((prev: string) => prev.slice(0, -1));
+      return;
+    }
+    setInput((prev: string) => prev + input);
+  });
 
-	return (
-		// The top-level box stretches to fill 100% of the screen height and width
-		<Box width="100%" height="100%">
-			<DiscordClientProvider token={token} guild={guild}>
-				<MainContent status={input} />
-			</DiscordClientProvider>
-		</Box>
-	);
+  return (
+    // The top-level box stretches to fill 100% of the screen height and width
+    <Box width="100%" height="100%">
+      <DiscordClientProvider token={token} guild={guild}>
+        <MainContent status={input} />
+      </DiscordClientProvider>
+    </Box>
+  );
 }
