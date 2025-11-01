@@ -2,22 +2,22 @@ import { Text } from "ink";
 import React, { useEffect, useState } from "react";
 
 function LoadingDots() {
-	const [dots, setDots] = useState<string>("");
+  const [dots, setDots] = useState<string>("");
 
-	useEffect(() => {
-		const interval = setInterval(() => {
-			setDots((prev) => {
-				if (prev === "...") {
-					return "";
-				}
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots((prev) => {
+        if (prev === "...") {
+          return "";
+        }
 
-				return prev + ".";
-			});
-		}, 250);
-		return () => clearInterval(interval);
-	}, [dots]);
+        return prev + ".";
+      });
+    }, 250);
+    return () => clearInterval(interval);
+  }, [dots]);
 
-	return <Text>{dots}</Text>;
+  return <Text>{dots}</Text>;
 }
 
 export default LoadingDots;
