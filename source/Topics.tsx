@@ -1,13 +1,34 @@
 import { ChannelType, GuildChannel } from "discord.js";
-import { Text } from "ink";
+import { useFocus, useInput } from "ink";
 import React, { useEffect, useState } from "react";
-import { useDiscord } from "./DiscordClientProvider.js";
-import LoadingDots from "./LoadingDots.js";
+import { useDiscord, useSelection } from "./DiscordClientProvider.js";
+import SelectableList from "./SelectableList.js";
+import { sidebarItemInputHandler } from "./utils.js";
 
 function Topics({ interactable }: { interactable: boolean }) {
-  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [topics, setTopics] = useState<GuildChannel[] | null>(null);
+  const [hoverIndex, setHoverIndex] = useState<number>(0);
+  const { selection, setSelection } = useSelection();
   const { client, guild } = useDiscord();
+
+  const { isFocused } = useFocus({ id: "topics" });
+
+  function handleReturn(selectedIndex: number) {
+    setSelection({ id: topics?.[selectedIndex]?.id ?? "", type: "topic" });
+  }
+
+  useInput((_input, key) => {
+    if (!interactable || !isFocused || !topics) {
+      return;
+    }
+    sidebarItemInputHandler(
+      key,
+      hoverIndex,
+      setHoverIndex,
+      handleReturn,
+      topics
+    );
+  });
 
   // Fetch all "topics" (channels) from the guild
   useEffect(() => {
@@ -24,25 +45,18 @@ function Topics({ interactable }: { interactable: boolean }) {
     fetchTopics();
   }, [client, guild]);
 
-  if (!topics) {
-    return (
-      <>
-        <Text bold>Topics</Text>
-        <Text>
-          Loading topics
-          <LoadingDots />
-        </Text>
-      </>
-    );
-  }
-
   return (
-    <>
-      <Text bold>Topics ({topics.length})</Text>
-      {topics.map((topic) => (
-        <Text key={topic.id}>/{topic.name}</Text>
-      ))}
-    </>
+    <SelectableList
+      title="Topics"
+      items={topics}
+      selection={selection}
+      selectionType="topic"
+      interactable={interactable}
+      isFocused={isFocused}
+      hoverIndex={hoverIndex}
+      loadingMessage="Loading topics"
+      formatItem={(topic) => `/${topic.name}`}
+    />
   );
 }
 

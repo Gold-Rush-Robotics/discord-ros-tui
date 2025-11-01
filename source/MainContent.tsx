@@ -1,13 +1,33 @@
 import { Box, Text } from "ink";
 import React from "react";
-import { useDiscord } from "./DiscordClientProvider.js";
+import { useDiscord, useSelection } from "./DiscordClientProvider.js";
 import { MessageInput } from "./MessageInput.js";
 import Nodes from "./Nodes.js";
+import TopicMessages from "./TopicMessages.js";
 import Topics from "./Topics.js";
 
 export function MainContent({ status }: { status: string }) {
   const { client } = useDiscord();
+  const { selection } = useSelection();
   const user = client.user;
+
+  let mainContent;
+  switch (selection?.type) {
+    case "topic":
+      mainContent = <TopicMessages channelId={selection.id} />;
+      break;
+    case "node":
+      mainContent = (
+        <>
+          <Text>Node: {selection?.id}</Text>
+          <Text>Not yet implemented</Text>
+        </>
+      );
+      break;
+    default:
+      mainContent = <Text>No selection</Text>;
+      break;
+  }
 
   return (
     <>
@@ -45,6 +65,7 @@ export function MainContent({ status }: { status: string }) {
             <Text bold>Main content</Text>
             <Text>Logged in as {user?.username}</Text>
             <Text>Show info here</Text>
+            {mainContent}
           </Box>
         </Box>
 

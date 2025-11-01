@@ -1,4 +1,4 @@
-import { Box, useApp, useInput } from "ink";
+import { Box, Key, useApp, useFocus, useFocusManager, useInput } from "ink";
 import React, { useState } from "react";
 import DiscordClientProvider from "./DiscordClientProvider.js";
 import { MainContent } from "./MainContent.js";
@@ -12,12 +12,23 @@ export default function App({
 }) {
   const [input, setInput] = useState<string>("");
   const { exit } = useApp();
+  const { focus } = useFocusManager();
+  const { isFocused: isCommandFocused } = useFocus({ id: "command-input" });
 
   useInput((input, key) => {
+    let shouldFocusAnyway = false; // since I don't think focus() will update the state immediately
+    if (shouldKeyFocusCommandInput(input, key)) {
+      shouldFocusAnyway = true;
+      focus("command-input");
+    }
     if (key.ctrl && input === "c") {
       exit();
       return;
     }
+    if (!isCommandFocused && !shouldFocusAnyway) {
+      return;
+    }
+
     if (key.return) {
       setInput("");
       return;
@@ -37,4 +48,19 @@ export default function App({
       </DiscordClientProvider>
     </Box>
   );
+}
+
+function shouldKeyFocusCommandInput(input: string, key: Key) {
+  if (
+    key.upArrow ||
+    key.downArrow ||
+    key.leftArrow ||
+    key.rightArrow ||
+    key.tab ||
+    key.return
+  ) {
+    return false;
+  }
+
+  return input !== "";
 }
