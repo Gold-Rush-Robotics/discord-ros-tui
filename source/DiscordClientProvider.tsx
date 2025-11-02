@@ -1,4 +1,10 @@
-import { Client, GatewayIntentBits } from "discord.js";
+import {
+  ChannelType,
+  Client,
+  GatewayIntentBits,
+  Message,
+  TextChannel,
+} from "discord.js";
 import { Text, useApp } from "ink";
 import React, {
   Dispatch,
@@ -13,6 +19,9 @@ import { exitError } from "./utils.js";
 const DiscordClientContext = React.createContext<Client | null>(null);
 const GuildContext = React.createContext<string | null>(null);
 const SelectionContext = React.createContext<SelectionContext | null>(null);
+const MessagesContext = React.createContext<Map<string, Message[]> | null>(
+  null
+);
 
 interface SelectionContext {
   selection: Selection | undefined;
@@ -41,6 +50,9 @@ function DiscordClientProvider({
 }) {
   const [client, setClient] = useState<Client | null>(null);
   const [selection, setSelection] = useState<Selection | undefined>(undefined);
+  const [messagesByChannel, setMessagesByChannel] = useState<
+    Map<string, Message[]>
+  >(new Map());
   const { exit } = useApp();
 
   useEffect(() => {
@@ -63,6 +75,87 @@ function DiscordClientProvider({
     };
   }, [token, guild, exit]);
 
+  // Fetch messages from all channels and set up event listeners
+  useEffect(() => {
+    if (!client) return;
+
+    let messageHandler: ((message: Message) => void) | null = null;
+
+    async function fetchAllMessages() {
+      if (!client) return;
+      try {
+        const guildObj = await client.guilds.fetch(guild);
+        const channels = await guildObj.channels.fetch();
+        const textChannels = Array.from(channels.values()).filter(
+          (channel) =>
+            channel !== null &&
+            channel.type === ChannelType.GuildText &&
+            channel instanceof TextChannel
+        ) as TextChannel[];
+
+        const fetchPromises = textChannels.map(async (channel) => {
+          try {
+            const messages = await channel.messages.fetch({ limit: 100 });
+            return {
+              channelId: channel.id,
+              messages: Array.from(messages.values()),
+            };
+          } catch {
+            return { channelId: channel.id, messages: [] };
+          }
+        });
+
+        const results = await Promise.all(fetchPromises);
+        const messagesMap = new Map<string, Message[]>();
+
+        for (const { channelId, messages } of results) {
+          // Sort messages by creation time (oldest first)
+          messages.sort(
+            (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+          );
+          messagesMap.set(channelId, messages);
+        }
+
+        setMessagesByChannel(messagesMap);
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+      }
+    }
+
+    // Set up event listener for new messages
+    messageHandler = (message: Message) => {
+      if (message.channel && message.channel instanceof TextChannel) {
+        setMessagesByChannel((prev) => {
+          const newMap = new Map(prev);
+          const channelId = message.channelId;
+          const existingMessages = newMap.get(channelId) || [];
+
+          // Check if message already exists to avoid duplicates
+          if (!existingMessages.some((m) => m.id === message.id)) {
+            const updatedMessages = [...existingMessages, message];
+            // Keep sorted by creation time
+            updatedMessages.sort(
+              (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+            );
+            newMap.set(channelId, updatedMessages);
+          }
+
+          return newMap;
+        });
+      }
+    };
+
+    client.on("messageCreate", messageHandler);
+    fetchAllMessages();
+
+    // Cleanup: remove listener when component unmounts
+    return () => {
+      if (messageHandler) {
+        client.off("messageCreate", messageHandler);
+      }
+    };
+  }, [client, guild]);
+
   if (!client) {
     return (
       <Text>
@@ -75,9 +168,11 @@ function DiscordClientProvider({
   return (
     <DiscordClientContext.Provider value={client}>
       <GuildContext.Provider value={guild}>
-        <SelectionContext.Provider value={{ selection, setSelection }}>
-          {children}
-        </SelectionContext.Provider>
+        <MessagesContext.Provider value={messagesByChannel}>
+          <SelectionContext.Provider value={{ selection, setSelection }}>
+            {children}
+          </SelectionContext.Provider>
+        </MessagesContext.Provider>
       </GuildContext.Provider>
     </DiscordClientContext.Provider>
   );
@@ -105,6 +200,30 @@ export function useSelection() {
     throw new Error("useSelection must be used within a DiscordClientProvider");
   }
   return selection;
+}
+
+/**
+ * Hook to access messages fetched by the DiscordClientProvider.
+ * Messages are automatically fetched from all text channels and updated in real-time.
+ * Throws an error if used outside of a DiscordClientProvider.
+ *
+ * @param channelId Optional channel ID to filter messages by a specific channel.
+ *                  If not provided, returns all messages from all channels.
+ * @returns A map of channel IDs to messages, or messages for a specific channel.
+ */
+export function useMessages(
+  channelId?: string
+): Map<string, Message[]> | Message[] {
+  const messagesByChannel = useContext(MessagesContext);
+  if (messagesByChannel === null) {
+    throw new Error("useMessages must be used within a DiscordClientProvider");
+  }
+
+  if (channelId) {
+    return messagesByChannel.get(channelId) || [];
+  }
+
+  return messagesByChannel;
 }
 
 async function initializeDiscordClient(

@@ -1,68 +1,46 @@
-import {
-  ChannelType,
-  Collection,
-  GuildMember,
-  Message,
-  Snowflake,
-  TextChannel,
-} from "discord.js";
+import { GuildMember, Message } from "discord.js";
 import { Text } from "ink";
 import React, { useEffect, useState } from "react";
-import { useDiscord } from "./DiscordClientProvider.js";
+import { useDiscord, useMessages } from "./DiscordClientProvider.js";
 import LoadingDots from "./LoadingDots.js";
 
 function ServiceCalls({ service }: { service: string }) {
-  const [serviceCalls, setServiceCalls] = useState<Message[] | null>(null);
   const [serviceMember, setServiceMember] = useState<GuildMember | null>(null);
   const { client, guild } = useDiscord();
+  const messagesByChannel = useMessages();
 
-  // Fetch recent calls to the service (i.e. messages mentioning the service/user)
+  // Fetch service member info
   useEffect(() => {
-    setServiceMember((_prev) => null);
-    setServiceCalls((_prev) => null);
+    setServiceMember(null);
+    async function fetchServiceMember() {
+      try {
+        const guildObj = await client.guilds.fetch(guild);
+        const fetchedService = await guildObj.members.fetch(service);
+        setServiceMember(fetchedService);
+      } catch (error) {
+        // Service member might not exist or be inaccessible
+        setServiceMember(null);
+      }
+    }
+    fetchServiceMember();
+  }, [client, guild, service]);
 
-    async function fetchServiceCalls() {
-      const [guildObj, fetchedService] = await Promise.all([
-        client.guilds.fetch(guild),
-        client.guilds.fetch(guild).then((g) => g.members.fetch(service)),
-      ]);
-
-      setServiceMember(fetchedService);
-
-      const channels = await guildObj.channels.fetch();
-      const textChannels = Array.from(channels.values()).filter(
-        (channel) =>
-          channel !== null &&
-          channel.type === ChannelType.GuildText &&
-          channel instanceof TextChannel
-      ) as TextChannel[];
-
-      const fetchPromises = textChannels.map((channel) =>
-        channel.messages
-          .fetch({ limit: 100 })
-          .catch(() => new Collection<Snowflake, Message>())
-      );
-
-      const results = await Promise.all(fetchPromises);
-
-      const serviceCalls: Message[] = results
-        .flatMap((messages) => Array.from(messages.values()))
-        .filter(
-          (message) =>
-            message.mentions &&
-            (message.mentions.users.has(service) ||
-              message.author.id === service)
-        );
-
-      serviceCalls.sort(
-        (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
-      );
-
-      setServiceCalls(serviceCalls);
+  // Filter messages for service calls from the cached messages
+  // useMessages() without channelId returns Map<string, Message[]>
+  let serviceCalls: Message[] | null = null;
+  if (messagesByChannel instanceof Map && messagesByChannel.size > 0) {
+    const allMessages: Message[] = [];
+    for (const messages of messagesByChannel.values()) {
+      allMessages.push(...messages);
     }
 
-    fetchServiceCalls();
-  }, [client, guild, service]);
+    serviceCalls = allMessages.filter(
+      (message) =>
+        message.mentions &&
+        (message.mentions.users.has(service) || message.author.id === service)
+    );
+    // Messages are already sorted by time in the provider
+  }
 
   return (
     <>

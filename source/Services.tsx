@@ -1,7 +1,11 @@
-import { ChannelType, GuildMember, TextChannel } from "discord.js";
+import { GuildMember } from "discord.js";
 import { useInput } from "ink";
-import React, { useEffect, useState } from "react";
-import { useDiscord, useSelection } from "./DiscordClientProvider.js";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  useDiscord,
+  useMessages,
+  useSelection,
+} from "./DiscordClientProvider.js";
 import { useFocusManager } from "./FocusManager.js";
 import SelectableList from "./SelectableList.js";
 import { sidebarItemInputHandler } from "./utils.js";
@@ -11,6 +15,7 @@ function Services({ interactable }: { interactable: boolean }) {
   const [hoverIndex, setHoverIndex] = useState<number>(0);
   const { selection, setSelection } = useSelection();
   const { client, guild } = useDiscord();
+  const messagesByChannel = useMessages();
 
   const { isCarouselItemActive } = useFocusManager();
   const isFocused = isCarouselItemActive("services");
@@ -32,52 +37,53 @@ function Services({ interactable }: { interactable: boolean }) {
     );
   });
 
-  // Fetch all "services" (mentioned users) from the guild
+  // Extract mentioned user IDs from cached messages
+  const mentionedUserIds = useMemo(() => {
+    if (!(messagesByChannel instanceof Map) || messagesByChannel.size === 0) {
+      return new Set<string>();
+    }
+
+    const userIds = new Set<string>();
+    for (const messages of messagesByChannel.values()) {
+      for (const message of messages) {
+        for (const user of message.mentions.users.values()) {
+          userIds.add(user.id);
+        }
+      }
+    }
+    return userIds;
+  }, [messagesByChannel]);
+
+  // Fetch guild members for mentioned users
   useEffect(() => {
-    async function fetchServices() {
-      const guildObj = await client.guilds.fetch(guild);
-      const channels = await guildObj.channels.fetch();
-      const textChannels = Array.from(channels.values()).filter(
-        (channel) =>
-          channel !== null &&
-          channel.type === ChannelType.GuildText &&
-          channel instanceof TextChannel
-      ) as TextChannel[];
+    if (mentionedUserIds.size === 0) {
+      setServices([]);
+      return;
+    }
 
-      const mentionedUserIds = new Set<string>();
-
-      // Fetch recent messages from all text channels and collect mentioned users
-      for (const channel of textChannels) {
-        try {
-          const messages = await channel.messages.fetch({ limit: 50 });
-          for (const message of messages.values()) {
-            // Collect mentioned users
-            for (const user of message.mentions.users.values()) {
-              mentionedUserIds.add(user.id);
+    async function fetchServiceMembers() {
+      try {
+        const guildObj = await client.guilds.fetch(guild);
+        const fetchPromises = Array.from(mentionedUserIds).map(
+          async (userId) => {
+            try {
+              return await guildObj.members.fetch(userId);
+            } catch {
+              // Skip users that are no longer in the guild
+              return null;
             }
           }
-        } catch (error) {
-          // Skip channels we can't access
-          continue;
-        }
+        );
+        const mentionedMembers = (await Promise.all(fetchPromises)).filter(
+          (member): member is GuildMember => member !== null
+        );
+        setServices(mentionedMembers);
+      } catch (error) {
+        setServices([]);
       }
-
-      // Fetch guild members for mentioned users
-      const mentionedMembers: GuildMember[] = [];
-      for (const userId of mentionedUserIds) {
-        try {
-          const member = await guildObj.members.fetch(userId);
-          mentionedMembers.push(member);
-        } catch (error) {
-          // Skip users that are no longer in the guild
-          continue;
-        }
-      }
-
-      setServices(mentionedMembers);
     }
-    fetchServices();
-  }, [client, guild]);
+    fetchServiceMembers();
+  }, [client, guild, mentionedUserIds]);
 
   return (
     <SelectableList
