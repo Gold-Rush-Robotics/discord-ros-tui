@@ -4,7 +4,9 @@ import { useDiscord, useSelection } from "./DiscordClientProvider.js";
 import { useFocusManager } from "./FocusManager.js";
 import { MessageInput } from "./MessageInput.js";
 import Nodes from "./Nodes.js";
+import PackageContents from "./PackageContents.js";
 import Packages from "./Packages.js";
+import ServiceCalls from "./ServiceCalls.js";
 import Services from "./Services.js";
 import TopicMessages from "./TopicMessages.js";
 import Topics from "./Topics.js";
@@ -59,6 +61,12 @@ export function MainContent({ status }: { status: string }) {
           <Text>Not yet implemented</Text>
         </>
       );
+      break;
+    case "package":
+      mainContent = <PackageContents pkg={selection?.id} />;
+      break;
+    case "service":
+      mainContent = <ServiceCalls service={selection?.id} />;
       break;
     default:
       mainContent = <Text>No selection</Text>;
