@@ -1,7 +1,8 @@
 import { GuildMember, Message } from "discord.js";
-import { Text } from "ink";
+import { Box, Text } from "ink";
 import React, { useEffect, useState } from "react";
 import { useDiscord, useMessages } from "./DiscordClientProvider.js";
+import DiscordMessage from "./DiscordMessage.js";
 import LoadingDots from "./LoadingDots.js";
 
 function ServiceCalls({ service }: { service: string }) {
@@ -69,11 +70,13 @@ function ServiceCalls({ service }: { service: string }) {
             ? serviceMember
             : call.mentions.users.at(0);
         return (
-          <Text key={call.id}>
-            [{call.createdAt.toLocaleString()}]{" "}
-            <Text bold>{sender.displayName}</Text> {"->"}{" "}
-            <Text bold>{receiver?.displayName}</Text> {call.content}
-          </Text>
+          <Box key={call.id} display="flex" flexDirection="row" gap={1}>
+            <Text>[{call.createdAt.toLocaleString()}]</Text>
+            <Text bold>{sender.displayName}</Text>
+            <Text>{"->"}</Text>
+            <Text bold>{receiver?.displayName}:</Text>
+            <DiscordMessage message={call} />
+          </Box>
         );
       })}
     </>
