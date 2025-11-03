@@ -11,6 +11,7 @@ import ServiceCalls from "./ServiceCalls.js";
 import Services from "./Services.js";
 import TopicMessages from "./TopicMessages.js";
 import Topics from "./Topics.js";
+import Tutorial from "./Tutorial.js";
 
 export function MainContent({ status }: { status: string }) {
   const { carouselIndex, setCarouselIndex, isFocused } = useFocusManager();
@@ -87,7 +88,7 @@ export function MainContent({ status }: { status: string }) {
       mainContent = <ServiceCalls service={selection?.id} />;
       break;
     default:
-      mainContent = <Text>No selection</Text>;
+      mainContent = <Tutorial />;
       break;
   }
 
