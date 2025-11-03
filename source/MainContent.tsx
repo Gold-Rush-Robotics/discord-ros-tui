@@ -1,5 +1,5 @@
 import { Box, Text, useInput } from "ink";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useDiscord, useSelection } from "./DiscordClientProvider.js";
 import { useFocusManager } from "./FocusManager.js";
 import { MessageInput } from "./MessageInput.js";
@@ -11,12 +11,35 @@ import ServiceCalls from "./ServiceCalls.js";
 import Services from "./Services.js";
 import TopicMessages from "./TopicMessages.js";
 import Topics from "./Topics.js";
+import Tutorial from "./Tutorial.js";
 
 export function MainContent({ status }: { status: string }) {
   const { carouselIndex, setCarouselIndex, isFocused } = useFocusManager();
   const { client } = useDiscord();
-  const { selection } = useSelection();
+  const { selection, title } = useSelection();
   const user = client.user;
+  const [guildName, setGuildName] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    async function loadGuildName() {
+      try {
+        const me = await client.guilds.fetch();
+        // Prefer showing current guild name if available among cache/fetch
+        // Fallback to first available guild if needed
+        const first = me.first();
+        if (!active) return;
+        setGuildName(first?.name ?? null);
+      } catch {
+        if (!active) return;
+        setGuildName(null);
+      }
+    }
+    loadGuildName();
+    return () => {
+      active = false;
+    };
+  }, [client.guilds]);
 
   const carousel = [
     { id: "node", element: <Nodes interactable={true} /> },
@@ -65,7 +88,7 @@ export function MainContent({ status }: { status: string }) {
       mainContent = <ServiceCalls service={selection?.id} />;
       break;
     default:
-      mainContent = <Text>No selection</Text>;
+      mainContent = <Tutorial />;
       break;
   }
 
@@ -103,9 +126,23 @@ export function MainContent({ status }: { status: string }) {
             paddingX={1}
             overflow="hidden"
           >
-            <Text bold>Main content</Text>
-            <Text>Logged in as {user?.username}</Text>
-            <Text>Show info here</Text>
+            <Box flexDirection="column" gap={1} marginBottom={1}>
+              <Text bold>
+                {user?.username}
+                {guildName && (
+                  <>
+                    {" | "}
+                    {guildName}
+                  </>
+                )}
+                {title && (
+                  <>
+                    {" | "}
+                    {title}
+                  </>
+                )}
+              </Text>
+            </Box>
             {mainContent}
           </Box>
         </Box>

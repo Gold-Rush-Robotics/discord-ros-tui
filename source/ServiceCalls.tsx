@@ -1,7 +1,11 @@
 import { GuildMember, Message } from "discord.js";
-import { Box, Text } from "ink";
+import { Text } from "ink";
 import React, { useEffect, useState } from "react";
-import { useDiscord, useMessages } from "./DiscordClientProvider.js";
+import {
+  useDiscord,
+  useMessages,
+  useSelection,
+} from "./DiscordClientProvider.js";
 import DiscordMessage from "./DiscordMessage.js";
 import LoadingDots from "./LoadingDots.js";
 
@@ -9,6 +13,7 @@ function ServiceCalls({ service }: { service: string }) {
   const [serviceMember, setServiceMember] = useState<GuildMember | null>(null);
   const { client, guild } = useDiscord();
   const messagesByChannel = useMessages();
+  const { setTitle } = useSelection();
 
   // Fetch service member info
   useEffect(() => {
@@ -25,6 +30,19 @@ function ServiceCalls({ service }: { service: string }) {
     }
     fetchServiceMember();
   }, [client, guild, service]);
+
+  useEffect(() => {
+    if (serviceMember?.displayName) {
+      setTitle(<>Service calls: /{serviceMember.displayName}</>);
+    } else {
+      setTitle(
+        <>
+          Service calls: /<LoadingDots />
+        </>
+      );
+    }
+    return () => setTitle(null);
+  }, [serviceMember?.displayName, setTitle]);
 
   // Filter messages for service calls from the cached messages
   // useMessages() without channelId returns Map<string, Message[]>
@@ -47,18 +65,9 @@ function ServiceCalls({ service }: { service: string }) {
 
   return (
     <>
-      <Text bold>
-        Service Calls for service{" "}
-        {serviceMember?.displayName ?? (
-          <>
-            (loading
-            <LoadingDots />)
-          </>
-        )}
-      </Text>
       {serviceCalls === null && (
         <Text>
-          Loading service calls
+          Loading
           <LoadingDots />
         </Text>
       )}
@@ -76,6 +85,7 @@ function ServiceCalls({ service }: { service: string }) {
           if (dateKey !== lastDateKey) {
             lastDateKey = dateKey;
             const dateStr = date.toLocaleDateString();
+            if (rows.length > 0) rows.push(<Text> </Text>); // new line
             rows.push(
               <Text key={`date-${dateKey}`} dimColor>
                 ——————————————————— {dateStr} ———————————————————
@@ -89,13 +99,13 @@ function ServiceCalls({ service }: { service: string }) {
               ? serviceMember
               : call.mentions.users.at(0);
           rows.push(
-            <Box key={call.id} display="flex" flexDirection="row" gap={1}>
-              <Text>[{call.createdAt.toLocaleTimeString()}]</Text>
-              <Text bold>{sender.displayName}</Text>
-              <Text>{"->"}</Text>
-              <Text bold>{receiver?.displayName}:</Text>
+            <Text key={call.id}>
+              <Text color="gray">[{call.createdAt.toLocaleTimeString()}] </Text>
+              <Text bold>{sender.displayName}</Text> {"->"}{" "}
+              <Text bold>{receiver?.displayName}</Text>
+              {": "}
               <DiscordMessage message={call} />
-            </Box>
+            </Text>
           );
         }
         return rows;

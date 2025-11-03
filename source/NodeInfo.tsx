@@ -1,7 +1,11 @@
 import { GuildMember, TextChannel } from "discord.js";
 import { Box, Text } from "ink";
 import React, { useEffect, useState } from "react";
-import { useDiscord, useMessages } from "./DiscordClientProvider.js";
+import {
+  useDiscord,
+  useMessages,
+  useSelection,
+} from "./DiscordClientProvider.js";
 import LoadingDots from "./LoadingDots.js";
 
 function NodeInfo({ nodeId }: { nodeId: string }) {
@@ -11,6 +15,22 @@ function NodeInfo({ nodeId }: { nodeId: string }) {
   >(new Map());
   const { client, guild } = useDiscord();
   const messagesByChannel = useMessages();
+  const { setTitle } = useSelection();
+
+  useEffect(() => {
+    if (nodeMember?.displayName) {
+      setTitle(<>Node info: /{nodeMember.displayName}</>);
+    } else {
+      setTitle(
+        <>
+          Node info: /<LoadingDots />
+        </>
+      );
+    }
+    return () => {
+      setTitle(null);
+    };
+  }, [nodeId, nodeMember?.displayName, setTitle]);
 
   // Fetch node member info
   useEffect(() => {
@@ -157,20 +177,8 @@ function NodeInfo({ nodeId }: { nodeId: string }) {
 
   return (
     <>
-      <Box flexDirection="column" gap={1}>
-        <Text bold>
-          Node: /
-          {nodeMember?.displayName ?? (
-            <>
-              (loading
-              <LoadingDots />)
-            </>
-          )}
-        </Text>
-      </Box>
-
       {nodeInfo === null && (
-        <Box flexDirection="column" marginTop={1}>
+        <Box flexDirection="column">
           <Text>
             Loading node information
             <LoadingDots />
@@ -179,7 +187,7 @@ function NodeInfo({ nodeId }: { nodeId: string }) {
       )}
 
       {!!nodeInfo && (
-        <Box flexDirection="column" marginTop={1} gap={1}>
+        <Box flexDirection="column" gap={1}>
           {/* Subscribers */}
           <Box flexDirection="column">
             <Text bold>Subscribers:</Text>
