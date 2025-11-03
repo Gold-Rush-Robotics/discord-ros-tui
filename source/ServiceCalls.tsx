@@ -41,6 +41,8 @@ function ServiceCalls({ service }: { service: string }) {
         (message.mentions.users.has(service) || message.author.id === service)
     );
     // Messages are already sorted by time in the provider
+    // but since we're merging across channels, sort ascending here
+    serviceCalls.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
   }
 
   return (
@@ -63,22 +65,41 @@ function ServiceCalls({ service }: { service: string }) {
       {serviceCalls?.length === 0 && (
         <Text>No recent calls to/from this service.</Text>
       )}
-      {serviceCalls?.map((call) => {
-        const sender = call.author;
-        const receiver =
-          call.author.id === service
-            ? serviceMember
-            : call.mentions.users.at(0);
-        return (
-          <Box key={call.id} display="flex" flexDirection="row" gap={1}>
-            <Text>[{call.createdAt.toLocaleString()}]</Text>
-            <Text bold>{sender.displayName}</Text>
-            <Text>{"->"}</Text>
-            <Text bold>{receiver?.displayName}:</Text>
-            <DiscordMessage message={call} />
-          </Box>
-        );
-      })}
+      {(() => {
+        const rows: React.ReactNode[] = [];
+        if (!serviceCalls) return rows;
+
+        let lastDateKey: string | null = null;
+        for (const call of serviceCalls) {
+          const date = call.createdAt;
+          const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+          if (dateKey !== lastDateKey) {
+            lastDateKey = dateKey;
+            const dateStr = date.toLocaleDateString();
+            rows.push(
+              <Text key={`date-${dateKey}`} dimColor>
+                ——————————————————— {dateStr} ———————————————————
+              </Text>
+            );
+          }
+
+          const sender = call.author;
+          const receiver =
+            call.author.id === service
+              ? serviceMember
+              : call.mentions.users.at(0);
+          rows.push(
+            <Box key={call.id} display="flex" flexDirection="row" gap={1}>
+              <Text>[{call.createdAt.toLocaleTimeString()}]</Text>
+              <Text bold>{sender.displayName}</Text>
+              <Text>{"->"}</Text>
+              <Text bold>{receiver?.displayName}:</Text>
+              <DiscordMessage message={call} />
+            </Box>
+          );
+        }
+        return rows;
+      })()}
     </>
   );
 }
