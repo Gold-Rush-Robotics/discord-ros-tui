@@ -1,5 +1,5 @@
 import { GuildMember, Message } from "discord.js";
-import { Box, Text } from "ink";
+import { Text } from "ink";
 import React, { useEffect, useState } from "react";
 import {
   useDiscord,
@@ -85,6 +85,7 @@ function ServiceCalls({ service }: { service: string }) {
           if (dateKey !== lastDateKey) {
             lastDateKey = dateKey;
             const dateStr = date.toLocaleDateString();
+            if (rows.length > 0) rows.push(<Text> </Text>); // new line
             rows.push(
               <Text key={`date-${dateKey}`} dimColor>
                 ——————————————————— {dateStr} ———————————————————
@@ -98,13 +99,13 @@ function ServiceCalls({ service }: { service: string }) {
               ? serviceMember
               : call.mentions.users.at(0);
           rows.push(
-            <Box key={call.id} display="flex" flexDirection="row" gap={1}>
-              <Text>[{call.createdAt.toLocaleTimeString()}]</Text>
-              <Text bold>{sender.displayName}</Text>
-              <Text>{"->"}</Text>
-              <Text bold>{receiver?.displayName}:</Text>
+            <Text key={call.id}>
+              <Text color="gray">[{call.createdAt.toLocaleTimeString()}] </Text>
+              <Text bold>{sender.displayName}</Text> {"->"}{" "}
+              <Text bold>{receiver?.displayName}</Text>
+              {": "}
               <DiscordMessage message={call} />
-            </Box>
+            </Text>
           );
         }
         return rows;

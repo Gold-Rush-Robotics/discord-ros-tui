@@ -1,5 +1,5 @@
 import { Message } from "discord.js";
-import { Box, Text } from "ink";
+import { Text } from "ink";
 import React, { useEffect } from "react";
 import {
   useDiscord,
@@ -55,6 +55,7 @@ function TopicMessages({ channelId }: { channelId: string }) {
       if (dateKey !== lastDateKey) {
         lastDateKey = dateKey;
         const dateStr = date.toLocaleDateString();
+        if (rows.length > 0) rows.push(<Text> </Text>); // new line
         rows.push(
           <Text key={`date-${dateKey}`} dimColor>
             ——————————————————— {dateStr} ———————————————————
@@ -63,15 +64,15 @@ function TopicMessages({ channelId }: { channelId: string }) {
       }
 
       rows.push(
-        <Box key={message.id} display="flex" flexDirection="row" gap={1}>
-          <Text>[{message.createdAt.toLocaleTimeString()}]</Text>
-          <Text>
+        <Text key={message.id}>
+          <Text color="gray">[{message.createdAt.toLocaleTimeString()}] </Text>
+          <Text color="cyanBright" bold>
             {"<"}
             {message.author.username}
-            {">"}
+            {">"}{" "}
           </Text>
           <DiscordMessage message={message} />
-        </Box>
+        </Text>
       );
     }
   }
