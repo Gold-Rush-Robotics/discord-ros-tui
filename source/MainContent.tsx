@@ -74,9 +74,9 @@ export function MainContent({ status }: { status: string }) {
             <Box
               borderStyle="single"
               flexDirection="column"
-              flexGrow={1}
               paddingX={1}
               overflow="hidden"
+              height={"50%"}
             >
               <Topics interactable={true} />
             </Box>
@@ -84,9 +84,9 @@ export function MainContent({ status }: { status: string }) {
             <Box
               borderStyle="single"
               flexDirection="column"
-              flexGrow={1}
               paddingX={1}
               overflow="hidden"
+              height={"50%"}
             >
               {carousel[carouselIndex]?.element}
             </Box>
