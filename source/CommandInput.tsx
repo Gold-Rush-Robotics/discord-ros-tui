@@ -16,9 +16,9 @@ export default function CommandInput({
   const { isFocused, setFocus } = useFocusManager();
 
   useInput((_input, key) => {
-    // Typing normal characters focuses command input; editing happens in MessageInput
+    // If a printable character is typed anywhere, focus the command input and handle it immediately
     let focusAnyway = false;
-    if (shouldKeyFocusCommandInput(input, key)) {
+    if (shouldKeyFocusOnTypedChar(_input, key)) {
       setFocus("command-input");
       focusAnyway = true; // Otherwise the first input will probably be dropped since above state update doesn't apply yet
     }
@@ -64,16 +64,7 @@ export default function CommandInput({
       return;
     }
     // Append printable characters only
-    if (
-      !key.ctrl &&
-      !key.meta &&
-      !key.shift &&
-      !key.tab &&
-      !key.leftArrow &&
-      !key.rightArrow &&
-      !key.upArrow &&
-      !key.downArrow
-    ) {
+    if (shouldKeyFocusOnTypedChar(_input, key)) {
       if (historyIndex !== null) {
         // Switch to live input seeded with selected history entry, then append
         const seed = commandHistory[historyIndex] ?? "";
@@ -102,7 +93,7 @@ export default function CommandInput({
   );
 }
 
-function shouldKeyFocusCommandInput(input: string, key: Key) {
+function shouldKeyFocusOnTypedChar(typed: string, key: Key) {
   if (
     key.upArrow ||
     key.downArrow ||
@@ -113,6 +104,5 @@ function shouldKeyFocusCommandInput(input: string, key: Key) {
   ) {
     return false;
   }
-
-  return input !== "";
+  return typed !== "";
 }
