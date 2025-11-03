@@ -1,4 +1,4 @@
-import { Box, Text, useInput } from "ink";
+import { Box, Text, useInput, useStdout } from "ink";
 import React, { useEffect, useState } from "react";
 import Command from "./Command.js";
 import CommandInput from "./CommandInput.js";
@@ -23,7 +23,40 @@ import {
   executeCommand,
 } from "./commandExecutor.js";
 
+const MIN_TERMINAL_COLUMNS = 100;
+const MIN_TERMINAL_ROWS = 24;
+
+function TerminalSizeWarning() {
+  const { stdout } = useStdout();
+  return (
+    <Box
+      flexDirection="column"
+      justifyContent="center"
+      alignItems="center"
+      height="100%"
+      borderStyle="single"
+      paddingX={1}
+    >
+      <Text bold color="yellow">
+        Terminal window is too small
+      </Text>
+      <Text> </Text>
+      <Text>
+        Current size: {stdout.columns} columns × {stdout.rows} rows
+      </Text>
+      <Text> </Text>
+      <Text>
+        Minimum required: {MIN_TERMINAL_COLUMNS} columns × {MIN_TERMINAL_ROWS}{" "}
+        rows
+      </Text>
+      <Text> </Text>
+      <Text dimColor>Please resize your terminal window to continue.</Text>
+    </Box>
+  );
+}
+
 export default function MainContent() {
+  const { stdout } = useStdout();
   const { carouselIndex, setCarouselIndex, isFocused } = useFocusManager();
   const { client, guild } = useDiscord();
   const { selection, setSelection, title, setTitle } = useSelection();
@@ -34,6 +67,11 @@ export default function MainContent() {
   const [commandResult, setCommandResult] = useState<CommandResult | null>(
     null
   );
+  const [isTerminalTooSmall, setIsTerminalTooSmall] = useState(() => {
+    return (
+      stdout.columns < MIN_TERMINAL_COLUMNS || stdout.rows < MIN_TERMINAL_ROWS
+    );
+  });
 
   function getMentionedUserIds() {
     if (!(messagesByChannel instanceof Map) || messagesByChannel.size === 0) {
@@ -84,6 +122,20 @@ export default function MainContent() {
     setTitle(null);
     return () => setTitle(null);
   }, [selection, commandResult, lastCommand, setTitle]);
+
+  // Check terminal size and listen for resize events
+  useEffect(() => {
+    function checkTerminalSize() {
+      setIsTerminalTooSmall(
+        stdout.columns < MIN_TERMINAL_COLUMNS || stdout.rows < MIN_TERMINAL_ROWS
+      );
+    }
+    checkTerminalSize();
+    stdout.on("resize", checkTerminalSize);
+    return () => {
+      stdout.off("resize", checkTerminalSize);
+    };
+  }, [stdout]);
 
   useEffect(() => {
     let active = true;
@@ -180,6 +232,14 @@ export default function MainContent() {
     }
   } else {
     mainContent = <Tutorial />;
+  }
+
+  if (isTerminalTooSmall) {
+    return (
+      <Box flexDirection="column" flexGrow={1} width="100%" height="100%">
+        <TerminalSizeWarning />
+      </Box>
+    );
   }
 
   return (

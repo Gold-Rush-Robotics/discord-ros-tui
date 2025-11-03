@@ -8,6 +8,7 @@ import {
 } from "./DiscordClientProvider.js";
 import DiscordMessage from "./DiscordMessage.js";
 import LoadingDots from "./LoadingDots.js";
+import { calculateMessageLines, useMainContentDimensions } from "./utils.js";
 
 function ServiceCalls({ service }: { service: string }) {
   const [serviceMember, setServiceMember] = useState<GuildMember | null>(null);
@@ -87,17 +88,107 @@ function ServiceCalls({ service }: { service: string }) {
         <Text>No recent calls to/from this service.</Text>
       )}
       {(() => {
-        const rows: React.ReactNode[] = [];
-        if (!serviceCalls) return rows;
+        const { height, width } = useMainContentDimensions();
 
-        let lastDateKey: string | null = null;
-        for (const call of serviceCalls) {
+        // Calculate which service calls to show, working backwards from newest
+        let linesUsed = 0;
+        const visible: Message[] = [];
+        let lastDateKeyCalc: string | null = null;
+
+        if (serviceCalls && serviceCalls.length > 0) {
+          // Work backwards from newest calls
+          for (let i = serviceCalls.length - 1; i >= 0; i--) {
+            const call = serviceCalls[i];
+            if (!call) continue;
+
+            const date = call.createdAt;
+            const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+
+            // Check if we need a date divider
+            const needsDateDivider = dateKey !== lastDateKeyCalc;
+            if (needsDateDivider) {
+              // Date divider takes 2 lines (blank line + divider line) unless it's the first one
+              if (linesUsed > 0) {
+                linesUsed += 2;
+              } else {
+                linesUsed += 1; // First date divider only takes 1 line
+              }
+            }
+
+            // Calculate message lines (accounting for timestamp + sender -> receiver prefix)
+            // Service call format: "[HH:MM:SS] sender -> receiver: "
+            const timestampWidth = 10; // "[HH:MM:SS] "
+            const senderName = call.author.displayName;
+            const receiverName =
+              call.mentions?.users.filter((u) => u.id !== call.author.id).at(0)
+                ?.displayName ?? "";
+            const totalPrefix =
+              timestampWidth + senderName.length + 4 + receiverName.length + 2; // "[HH:MM:SS] sender -> receiver: "
+            const messageLines = calculateMessageLines(
+              call,
+              width,
+              totalPrefix
+            );
+            linesUsed += messageLines;
+
+            // Reserve 1 line for truncation indicator if we're truncating
+            const reservedHeight = height - 1;
+
+            // If we exceed available height, stop
+            if (linesUsed > reservedHeight) {
+              break;
+            }
+
+            visible.unshift(call); // Add to front to maintain chronological order
+            lastDateKeyCalc = dateKey;
+          }
+        }
+
+        const truncated = serviceCalls
+          ? serviceCalls.length - visible.length
+          : 0;
+
+        // Check if we're at the fetch limit (100 per channel)
+        // We can't know for sure if there are more, but if we have messages from multiple channels
+        // and any channel might have more, we should show +. For simplicity, check if total messages
+        // from all channels is large (could indicate we hit limits)
+        // Actually, we can't easily tell here. Let's check if any channel has 100 messages
+        let isAtLimit = false;
+        if (messagesByChannel instanceof Map) {
+          for (const channelMessages of messagesByChannel.values()) {
+            if (channelMessages.length === 100) {
+              isAtLimit = true;
+              break;
+            }
+          }
+        }
+
+        const rows: React.ReactNode[] = [];
+
+        // Show truncation indicator at top if we're truncating old messages
+        if (truncated > 0) {
+          rows.push(
+            <Text key="truncated-top" dimColor>
+              ... {truncated}
+              {isAtLimit ? "+" : ""} older call{truncated !== 1 ? "s" : ""} not
+              shown
+            </Text>
+          );
+        }
+
+        if (visible.length === 0) {
+          return rows;
+        }
+
+        let lastDateKeyRender: string | null = null;
+        for (const call of visible) {
           const date = call.createdAt;
           const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-          if (dateKey !== lastDateKey) {
-            lastDateKey = dateKey;
+          if (dateKey !== lastDateKeyRender) {
+            lastDateKeyRender = dateKey;
             const dateStr = date.toLocaleDateString();
-            if (rows.length > 0) rows.push(<Text> </Text>); // new line
+            if (rows.length > 0)
+              rows.push(<Text key={`blank-${dateKey}`}> </Text>); // new line
             rows.push(
               <Text key={`date-${dateKey}`} dimColor>
                 ——————————————————— {dateStr} ———————————————————
@@ -120,6 +211,7 @@ function ServiceCalls({ service }: { service: string }) {
             </Text>
           );
         }
+
         return rows;
       })()}
     </>
