@@ -3,6 +3,7 @@ import React from "react";
 import { useDiscord, useSelection } from "./DiscordClientProvider.js";
 import { useFocusManager } from "./FocusManager.js";
 import { MessageInput } from "./MessageInput.js";
+import NodeInfo from "./NodeInfo.js";
 import Nodes from "./Nodes.js";
 import PackageContents from "./PackageContents.js";
 import Packages from "./Packages.js";
@@ -55,12 +56,7 @@ export function MainContent({ status }: { status: string }) {
       mainContent = <TopicMessages channelId={selection.id} />;
       break;
     case "node":
-      mainContent = (
-        <>
-          <Text>Node: {selection?.id}</Text>
-          <Text>Not yet implemented</Text>
-        </>
-      );
+      mainContent = <NodeInfo nodeId={selection?.id} />;
       break;
     case "package":
       mainContent = <PackageContents pkg={selection?.id} />;
