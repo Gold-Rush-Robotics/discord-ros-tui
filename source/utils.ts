@@ -40,3 +40,16 @@ export function sidebarItemInputHandler(
     onReturn(hoverIndex);
   }
 }
+
+/**
+ * Gets the character to be used to prefix a list of items (like a tree structure)
+ * @param index The index of the item
+ * @param items The total number of items
+ * @returns The character to be used to prefix the item
+ */
+export function getListCharacter(index: number, items: number) {
+  if (index === items - 1) {
+    return "└─";
+  }
+  return "├─";
+}
