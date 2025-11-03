@@ -118,19 +118,19 @@ function SelectableList<T extends { id: string }>({
 
         if (isSelected) {
           return (
-            <Text key={item.id} backgroundColor={"white"} color={"black"}>
+            <Text key={item.id} wrap="truncate" backgroundColor={"white"} color={"black"}>
               {itemFormatted}
             </Text>
           );
         }
         if (isHovered) {
           return (
-            <Text key={item.id} backgroundColor={"gray"} color={"white"}>
+            <Text key={item.id} wrap="truncate" backgroundColor={"gray"} color={"white"}>
               {itemFormatted}
             </Text>
           );
         }
-        return <Text key={item.id}>{itemFormatted}</Text>;
+        return <Text key={item.id} wrap="truncate">{itemFormatted}</Text>;
       })}
     </>
   );
