@@ -53,11 +53,23 @@ function ServiceCalls({ service }: { service: string }) {
       allMessages.push(...messages);
     }
 
-    serviceCalls = allMessages.filter(
-      (message) =>
-        message.mentions &&
-        (message.mentions.users.has(service) || message.author.id === service)
-    );
+    serviceCalls = allMessages.filter((message) => {
+      if (!message.mentions) return false;
+
+      // Check if message mentions the service or is from the service
+      const mentionsService = message.mentions.users.has(service);
+      const isFromService = message.author.id === service;
+
+      if (!mentionsService && !isFromService) return false;
+
+      // Filter out author from mentions to get valid receivers
+      const validReceivers = Array.from(message.mentions.users.values()).filter(
+        (user) => user.id !== message.author.id
+      );
+
+      // Skip if no valid receivers (author only mentioned themselves)
+      return validReceivers.length > 0;
+    });
     // Messages are already sorted by time in the provider
     // but since we're merging across channels, sort ascending here
     serviceCalls.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
@@ -94,10 +106,10 @@ function ServiceCalls({ service }: { service: string }) {
           }
 
           const sender = call.author;
-          const receiver =
-            call.author.id === service
-              ? serviceMember
-              : call.mentions.users.at(0);
+          // Get receiver: filter out author from mentions, then take first
+          const receiver = call.mentions?.users
+            .filter((user) => user.id !== call.author.id)
+            .at(0);
           rows.push(
             <Text key={call.id}>
               <Text color="gray">[{call.createdAt.toLocaleTimeString()}] </Text>
