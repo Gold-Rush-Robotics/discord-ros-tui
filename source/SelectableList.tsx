@@ -1,5 +1,5 @@
-import { Box, Text } from "ink";
-import React from "react";
+import { Box, Text, useStdout } from "ink";
+import React, { useEffect, useState } from "react";
 import { Selection } from "./DiscordClientProvider.js";
 import LoadingDots from "./LoadingDots.js";
 
@@ -28,6 +28,49 @@ function SelectableList<T extends { id: string }>({
   loadingMessage,
   isCarousel = false,
 }: SelectableListProps<T>) {
+  const { stdout } = useStdout();
+  const [scrollOffset, setScrollOffset] = useState(0);
+  const [height, setHeight] = useState(
+    Math.max(0, Math.floor((stdout.rows - 6) / 2) - 2)
+  );
+
+  useEffect(() => {
+    function resize() {
+      setHeight(Math.max(0, Math.floor((stdout.rows - 6) / 2)) - 2);
+    }
+
+    stdout.on("resize", resize);
+    return () => {
+      stdout.off("resize", resize);
+    };
+  }, [stdout]);
+
+  useEffect(() => {
+    if (!items || height <= 0) {
+      setScrollOffset(0);
+      return;
+    }
+
+    let newOffset = scrollOffset;
+
+    if (hoverIndex < scrollOffset) {
+      // If hover is behind offset, set offset to hover index.
+      newOffset = hoverIndex;
+    } else if (hoverIndex >= scrollOffset + height) {
+      // If hoverIndex is ahead of visible elements,
+      // calculate the new offset to position the hovered item at the bottom.
+      newOffset = hoverIndex - height + 1;
+    }
+
+    // Confines the offset.
+    const maxOffset = Math.max(0, items.length - height);
+    newOffset = Math.min(Math.max(0, newOffset), maxOffset);
+
+    if (newOffset !== scrollOffset) {
+      setScrollOffset(newOffset);
+    }
+  }, [hoverIndex, height, items, scrollOffset]);
+
   if (!items) {
     return (
       <>
@@ -39,6 +82,8 @@ function SelectableList<T extends { id: string }>({
       </>
     );
   }
+
+  const visibleItems = items.slice(scrollOffset, scrollOffset + height);
 
   return (
     <>
@@ -56,26 +101,50 @@ function SelectableList<T extends { id: string }>({
         </Text>
       )}
 
-      {items.map((item, index) => {
+      {visibleItems.map((item, index) => {
+        const realIndex = index + scrollOffset;
         const isSelected =
           selection?.type === selectionType && selection?.id === item.id;
-        const isHovered = interactable && isFocused && index === hoverIndex;
+        const isHovered = interactable && isFocused && realIndex === hoverIndex;
+
+        const isLastVisibleItem = index === visibleItems.length - 1;
+        const moreItemsAvailable = scrollOffset + height < items.length;
+        let itemFormatted = formatItem(item);
+
+        if (isLastVisibleItem && moreItemsAvailable) {
+          // Add "..." if scrollable/more items available.
+          itemFormatted = itemFormatted.trim() + "...";
+        }
 
         if (isSelected) {
           return (
-            <Text key={item.id} backgroundColor={"white"} color={"black"}>
-              {formatItem(item)}
+            <Text
+              key={item.id}
+              wrap="truncate"
+              backgroundColor={"white"}
+              color={"black"}
+            >
+              {itemFormatted}
             </Text>
           );
         }
         if (isHovered) {
           return (
-            <Text key={item.id} backgroundColor={"gray"} color={"white"}>
-              {formatItem(item)}
+            <Text
+              key={item.id}
+              wrap="truncate"
+              backgroundColor={"gray"}
+              color={"white"}
+            >
+              {itemFormatted}
             </Text>
           );
         }
-        return <Text key={item.id}>{formatItem(item)}</Text>;
+        return (
+          <Text key={item.id} wrap="truncate">
+            {itemFormatted}
+          </Text>
+        );
       })}
     </>
   );
