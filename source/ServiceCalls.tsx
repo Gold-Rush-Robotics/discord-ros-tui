@@ -1,7 +1,11 @@
 import { GuildMember, Message } from "discord.js";
 import { Box, Text } from "ink";
 import React, { useEffect, useState } from "react";
-import { useDiscord, useMessages } from "./DiscordClientProvider.js";
+import {
+  useDiscord,
+  useMessages,
+  useSelection,
+} from "./DiscordClientProvider.js";
 import DiscordMessage from "./DiscordMessage.js";
 import LoadingDots from "./LoadingDots.js";
 
@@ -9,6 +13,7 @@ function ServiceCalls({ service }: { service: string }) {
   const [serviceMember, setServiceMember] = useState<GuildMember | null>(null);
   const { client, guild } = useDiscord();
   const messagesByChannel = useMessages();
+  const { setTitle } = useSelection();
 
   // Fetch service member info
   useEffect(() => {
@@ -25,6 +30,19 @@ function ServiceCalls({ service }: { service: string }) {
     }
     fetchServiceMember();
   }, [client, guild, service]);
+
+  useEffect(() => {
+    if (serviceMember?.displayName) {
+      setTitle(<>Service calls: /{serviceMember.displayName}</>);
+    } else {
+      setTitle(
+        <>
+          Service calls: /<LoadingDots />
+        </>
+      );
+    }
+    return () => setTitle(null);
+  }, [serviceMember?.displayName, setTitle]);
 
   // Filter messages for service calls from the cached messages
   // useMessages() without channelId returns Map<string, Message[]>
@@ -47,18 +65,9 @@ function ServiceCalls({ service }: { service: string }) {
 
   return (
     <>
-      <Text bold>
-        Service Calls for service{" "}
-        {serviceMember?.displayName ?? (
-          <>
-            (loading
-            <LoadingDots />)
-          </>
-        )}
-      </Text>
       {serviceCalls === null && (
         <Text>
-          Loading service calls
+          Loading
           <LoadingDots />
         </Text>
       )}

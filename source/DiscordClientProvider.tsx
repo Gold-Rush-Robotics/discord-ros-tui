@@ -26,6 +26,8 @@ const MessagesContext = React.createContext<Map<string, Message[]> | null>(
 interface SelectionContext {
   selection: Selection | undefined;
   setSelection: Dispatch<SetStateAction<Selection | undefined>>;
+  title: React.ReactNode | null;
+  setTitle: Dispatch<SetStateAction<React.ReactNode | null>>;
 }
 
 /**
@@ -50,6 +52,7 @@ function DiscordClientProvider({
 }) {
   const [client, setClient] = useState<Client | null>(null);
   const [selection, setSelection] = useState<Selection | undefined>(undefined);
+  const [title, setTitle] = useState<React.ReactNode | null>(null);
   const [messagesByChannel, setMessagesByChannel] = useState<
     Map<string, Message[]>
   >(new Map());
@@ -169,7 +172,9 @@ function DiscordClientProvider({
     <DiscordClientContext.Provider value={client}>
       <GuildContext.Provider value={guild}>
         <MessagesContext.Provider value={messagesByChannel}>
-          <SelectionContext.Provider value={{ selection, setSelection }}>
+          <SelectionContext.Provider
+            value={{ selection, setSelection, title, setTitle }}
+          >
             {children}
           </SelectionContext.Provider>
         </MessagesContext.Provider>
