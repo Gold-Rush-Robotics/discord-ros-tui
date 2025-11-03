@@ -1,5 +1,5 @@
 import { Box, Text, useStdout } from "ink";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Selection } from "./DiscordClientProvider.js";
 import LoadingDots from "./LoadingDots.js";
 
@@ -35,13 +35,13 @@ function SelectableList<T extends { id: string }>({
   );
 
   useEffect(() => {
-    function Resize() {
+    function resize() {
       setHeight(Math.max(0, Math.floor((stdout.rows - 6) / 2)) - 2);
     }
 
-    stdout.on("resize", Resize);
+    stdout.on("resize", resize);
     return () => {
-      stdout.off("resize", Resize);
+      stdout.off("resize", resize);
     };
   }, [stdout]);
 
@@ -118,19 +118,33 @@ function SelectableList<T extends { id: string }>({
 
         if (isSelected) {
           return (
-            <Text key={item.id} wrap="truncate" backgroundColor={"white"} color={"black"}>
+            <Text
+              key={item.id}
+              wrap="truncate"
+              backgroundColor={"white"}
+              color={"black"}
+            >
               {itemFormatted}
             </Text>
           );
         }
         if (isHovered) {
           return (
-            <Text key={item.id} wrap="truncate" backgroundColor={"gray"} color={"white"}>
+            <Text
+              key={item.id}
+              wrap="truncate"
+              backgroundColor={"gray"}
+              color={"white"}
+            >
               {itemFormatted}
             </Text>
           );
         }
-        return <Text key={item.id} wrap="truncate">{itemFormatted}</Text>;
+        return (
+          <Text key={item.id} wrap="truncate">
+            {itemFormatted}
+          </Text>
+        );
       })}
     </>
   );
