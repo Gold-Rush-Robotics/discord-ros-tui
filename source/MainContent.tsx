@@ -1,8 +1,8 @@
 import { Box, Text, useInput } from "ink";
 import React, { useEffect, useState } from "react";
+import CommandInput from "./CommandInput.js";
 import { useDiscord, useSelection } from "./DiscordClientProvider.js";
 import { useFocusManager } from "./FocusManager.js";
-import { MessageInput } from "./MessageInput.js";
 import NodeInfo from "./NodeInfo.js";
 import Nodes from "./Nodes.js";
 import PackageContents from "./PackageContents.js";
@@ -13,12 +13,16 @@ import TopicMessages from "./TopicMessages.js";
 import Topics from "./Topics.js";
 import Tutorial from "./Tutorial.js";
 
-export function MainContent({ status }: { status: string }) {
+export default function MainContent() {
   const { carouselIndex, setCarouselIndex, isFocused } = useFocusManager();
   const { client } = useDiscord();
   const { selection, title } = useSelection();
   const user = client.user;
   const [guildName, setGuildName] = useState<string | null>(null);
+
+  function onCommandSubmit(command: string) {
+    // TODO: Execute command
+  }
 
   useEffect(() => {
     let active = true;
@@ -147,10 +151,7 @@ export function MainContent({ status }: { status: string }) {
           </Box>
         </Box>
 
-        <MessageInput
-          input={status}
-          placeholder="Enter a command... (Ctrl+C to exit)"
-        />
+        <CommandInput onSubmit={onCommandSubmit} />
       </Box>
     </>
   );
