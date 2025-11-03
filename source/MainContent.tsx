@@ -1,8 +1,13 @@
 import { Box, Text, useInput } from "ink";
 import React, { useEffect, useState } from "react";
-import { useDiscord, useSelection } from "./DiscordClientProvider.js";
+import Command from "./Command.js";
+import CommandInput from "./CommandInput.js";
+import {
+  useDiscord,
+  useMessages,
+  useSelection,
+} from "./DiscordClientProvider.js";
 import { useFocusManager } from "./FocusManager.js";
-import { MessageInput } from "./MessageInput.js";
 import NodeInfo from "./NodeInfo.js";
 import Nodes from "./Nodes.js";
 import PackageContents from "./PackageContents.js";
@@ -12,13 +17,73 @@ import Services from "./Services.js";
 import TopicMessages from "./TopicMessages.js";
 import Topics from "./Topics.js";
 import Tutorial from "./Tutorial.js";
+import {
+  CommandExecutorContext,
+  CommandResult,
+  executeCommand,
+} from "./commandExecutor.js";
 
-export function MainContent({ status }: { status: string }) {
+export default function MainContent() {
   const { carouselIndex, setCarouselIndex, isFocused } = useFocusManager();
-  const { client } = useDiscord();
-  const { selection, title } = useSelection();
+  const { client, guild } = useDiscord();
+  const { selection, setSelection, title, setTitle } = useSelection();
+  const messagesByChannel = useMessages();
   const user = client.user;
   const [guildName, setGuildName] = useState<string | null>(null);
+  const [lastCommand, setLastCommand] = useState<string | null>(null);
+  const [commandResult, setCommandResult] = useState<CommandResult | null>(
+    null
+  );
+
+  function getMentionedUserIds() {
+    if (!(messagesByChannel instanceof Map) || messagesByChannel.size === 0) {
+      return new Set<string>();
+    }
+    const userIds = new Set<string>();
+    for (const messages of messagesByChannel.values()) {
+      for (const message of messages) {
+        for (const user of message.mentions.users.values()) {
+          userIds.add(user.id);
+        }
+      }
+    }
+    return userIds;
+  }
+
+  async function onCommandSubmit(command: string) {
+    setLastCommand(command);
+    setSelection(undefined); // deselect any sidebar item so command output is shown
+
+    const context: CommandExecutorContext = {
+      client,
+      guildId: guild,
+      setSelection,
+      getMentionedUserIds,
+    };
+
+    const result = await executeCommand(command, context);
+    setCommandResult(result);
+
+    // Handle selection commands immediately
+    if (result.type === "selection") {
+      setSelection(result.selection);
+    }
+  }
+
+  // When showing command results (no selection), set a simple title
+  useEffect(() => {
+    // If a sidebar selection is active, defer to that view's title management
+    if (selection) {
+      return;
+    }
+    if (commandResult && lastCommand) {
+      setTitle(<Text>Command output: {lastCommand}</Text>);
+      return () => setTitle(null);
+    }
+    // If no command result, clear title
+    setTitle(null);
+    return () => setTitle(null);
+  }, [selection, commandResult, lastCommand, setTitle]);
 
   useEffect(() => {
     let active = true;
@@ -74,22 +139,47 @@ export function MainContent({ status }: { status: string }) {
   });
 
   let mainContent;
-  switch (selection?.type) {
-    case "topic":
-      mainContent = <TopicMessages channelId={selection.id} />;
-      break;
-    case "node":
-      mainContent = <NodeInfo nodeId={selection?.id} />;
-      break;
-    case "package":
-      mainContent = <PackageContents pkg={selection?.id} />;
-      break;
-    case "service":
-      mainContent = <ServiceCalls service={selection?.id} />;
-      break;
-    default:
-      mainContent = <Tutorial />;
-      break;
+  // Selection takes priority over command results
+  if (selection) {
+    switch (selection.type) {
+      case "topic":
+        mainContent = <TopicMessages channelId={selection.id} />;
+        break;
+      case "node":
+        mainContent = <NodeInfo nodeId={selection.id} />;
+        break;
+      case "package":
+        mainContent = <PackageContents pkg={selection.id} />;
+        break;
+      case "service":
+        mainContent = <ServiceCalls service={selection.id} />;
+        break;
+    }
+  } else if (commandResult) {
+    // setTitle((_prev) => <Text>Command output: {lastCommand}</Text>);
+
+    // Show command result if no selection
+    switch (commandResult.type) {
+      case "list":
+        mainContent = commandResult.component;
+        break;
+      case "help":
+        mainContent = (
+          <Command command={lastCommand || ""} result={commandResult} />
+        );
+        break;
+      case "error":
+        mainContent = (
+          <Command command={lastCommand || ""} result={commandResult} />
+        );
+        break;
+      case "selection":
+        // Should not happen here as we handle it in onCommandSubmit
+        mainContent = <Tutorial />;
+        break;
+    }
+  } else {
+    mainContent = <Tutorial />;
   }
 
   return (
@@ -147,10 +237,7 @@ export function MainContent({ status }: { status: string }) {
           </Box>
         </Box>
 
-        <MessageInput
-          input={status}
-          placeholder="Enter a command... (Ctrl+C to exit)"
-        />
+        <CommandInput onSubmit={onCommandSubmit} />
       </Box>
     </>
   );
